@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    container_name: de-postgres
+    environment:
+      POSTGRES_USER: dataeng
+      POSTGRES_PASSWORD: dataeng123
+      POSTGRES_DB: warehouse
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - de-network
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: de-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3,athena,glue
+      DEBUG: 1
+      DATA_DIR: /tmp/localstack/data
+      DOCKER_HOST: unix:///var/run/docker.sock
+    volumes:
+      - "${TMPDIR}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - de-network
+
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    container_name: de-jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/workspace/notebooks
+      - ./data:/workspace/data
+      - ./scripts:/workspace/scripts
+    environment:
+      JUPYTER_ENABLE_LAB: "yes"
+    networks:
+      - de-network
+
+volumes:
+  postgres_data:
+
+networks:
+  de-network:
+    driver: bridge
