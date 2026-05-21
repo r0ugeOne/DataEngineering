@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+
   postgres:
     image: postgres:14-alpine
     container_name: de-postgres
@@ -47,8 +48,37 @@ services:
     networks:
       - de-network
 
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: de-namenode
+    environment:
+      - CLUSTER_NAME=de-cluster
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    volumes:
+      - namenode_data:/hadoop/dfs/name
+    networks:
+      - de-network
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: de-datanode
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870
+    ports:
+      - "9864:9864"
+    volumes:
+      - datanode_data:/hadoop/dfs/data
+    depends_on:
+      - namenode
+    networks:
+      - de-network
+
 volumes:
   postgres_data:
+  namenode_data:
+  datanode_data:
 
 networks:
   de-network:
